@@ -1,0 +1,140 @@
+import pyttsx3
+import speech_recognition as sr
+import datetime
+import webbrowser
+import os
+import wikipedia
+import smtplib
+import requests
+from bs4 import BeautifulSoup
+
+# Initialize text-to-speech and speech recognition engines
+engine = pyttsx3.init()
+recognizer = sr.Recognizer()
+
+
+# Function to convert text to speech
+def speak(text):
+    engine.say(text)
+    engine.runAndWait()
+
+
+# Function to greet the user
+def greet():
+    current_time = datetime.datetime.now()
+    hour = current_time.hour
+    if 5 <= hour < 12:
+        speak("Good morning, Kishore!")
+    elif 12 <= hour < 18:
+        speak("Good afternoon, Kishore!")
+    else:
+        speak("Good evening, Kishore!")
+
+
+# Function to process voice commands
+def process_command(command):
+    if "hello" in command:
+        greet()
+    elif "open website" in command:
+        speak("Of course! Tell me which website you'd like to visit, Kishore.")
+        website = listen()
+        webbrowser.open(website)
+    elif "play music" in command:
+        speak("Let's get into the groove, Kishore. Playing some music...")
+        os.system("your_music_player_command_here")
+    elif "what's the time" in command:
+        current_time = datetime.datetime.now().strftime("%H:%M:%S")
+        speak(f"Kishore, the current time is {current_time}")
+    elif "news" in command:
+        speak("Here are the latest news headlines, Kishore:")
+        get_news()
+    elif "search" in command:
+        speak("What topic can I help you explore today, Kishore?")
+        search_query = listen()
+        search_wikipedia(search_query)
+    elif "chat" in command:
+        chat()
+    # Add more advanced features and friendly responses here...
+    else:
+        speak("I'm sorry, Kishore, but I didn't quite catch that command.")
+
+
+# Function to engage in a chat with the user
+def chat():
+    speak("Sure, I'm here to chat with you. What's on your mind?")
+    while True:
+        user_input = listen()
+        if "exit" in user_input:
+            speak("It was nice chatting with you, Kishore!")
+            break
+        response = generate_chat_response(user_input)
+        speak(response)
+
+
+# Function to generate responses for the chat
+def generate_chat_response(input_text):
+    # You can implement a more sophisticated chatbot here using NLU and pre-defined responses.
+    # For simplicity, we'll provide some basic responses.
+    if "how are you" in input_text:
+        return "I'm just a computer program, but I'm here to assist you, Kishore!"
+    elif "tell me a joke" in input_text:
+        return "Why don't scientists trust atoms? Because they make up everything!"
+    else:
+        return "I'm not sure I understand. Could you please clarify, my friend?"
+
+
+# Function to listen for voice input
+def listen():
+    with sr.Microphone() as source:
+        print("Listening...")
+        recognizer.adjust_for_ambient_noise(source)
+        audio = recognizer.listen(source)
+        try:
+            command = recognizer.recognize_google(audio)
+            print("You said: " + command)
+            return command.lower()
+        except sr.UnknownValueError:
+            print("Sorry, I couldn't understand your voice, Kishore.")
+            return ""
+        except sr.RequestError as e:
+            print("Sorry, there was an error with the voice recognition service, Kishore.")
+            return ""
+
+
+# Function to get the latest news headlines
+def get_news():
+    # You can replace this URL with a preferred news source
+    news_url = "https://example.com/news"
+    response = requests.get(news_url)
+    soup = BeautifulSoup(response.content, 'html.parser')
+
+    headlines = soup.find_all('h2')[:5]  # Get the first 5 headlines
+
+    for index, headline in enumerate(headlines, start=1):
+        speak(f"Headline {index}: {headline.text}")
+
+
+# Function to search Wikipedia
+def search_wikipedia(query):
+    try:
+        result = wikipedia.summary(query, sentences=2)
+        speak("According to Wikipedia, Kishore:")
+        speak(result)
+    except wikipedia.exceptions.PageError:
+        speak("I couldn't find any results for that query, Kishore.")
+    except wikipedia.exceptions.DisambiguationError as e:
+        speak("There are multiple results for that query, my friend. Please specify.")
+    except wikipedia.exceptions.HTTPTimeoutError:
+        speak("Wikipedia's servers are not responding, my friend. Please try again later.")
+
+
+# Main loop for the voice assistant
+if __name__ == "__main__":
+    speak("Hello, kishore! I'm Friday. How can I assist you today?")
+
+    while True:
+        command = listen()
+        if "exit" in command:
+            speak("Goodbye, Kishore!")
+            break
+        process_command(command)
